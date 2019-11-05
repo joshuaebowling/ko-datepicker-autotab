@@ -1,0 +1,153 @@
+<html class="" lang="en"><head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex">
+<link rel="shortcut icon" type="image/x-icon" href="https://static.codepen.io/assets/favicon/favicon-aec34940fbc1a6e787974dcd360f2c6b63348d4b1f4e06c77743096d55480f33.ico">
+<link rel="mask-icon" type="" href="https://static.codepen.io/assets/favicon/logo-pin-8f3771b1072e3c38bd662872f6b673a722f4b3ca2421637d5596661b4e2132cc.svg" color="#111">
+<link rel="canonical" href="https://codepen.io/shoj/pen/f708ef73eac11407edb4acfd8f343e17?editors=1011">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css">
+<style class="cp-pen-styles">
+          #container {
+  padding: 20px;
+}
+        </style>
+</head>
+<body>
+
+
+<script id="tmpl-dater" type="text/template">
+      <div class="input-group">
+        <div class="input-group-prepend"><span class="input-group-text">Date</span></div>
+        <input class="form-control" id="month" type="number" next="day" data-bind="textInput: month, event:{ focus: (d, e) =&gt; onFocus('month', e), blur: () =&gt; onBlur('month')}"/>
+        <input class="form-control" id="day" type="number" next="year" data-bind="textInput: day, event:{ focus: (d, e) =&gt; onFocus('day', e), blur: () =&gt; onBlur('day')}"/>
+        <input class="form-control" id="year" type="number" data-bind="textInput: year"/>
+        <div class="input-group-append"><span class="input-group-text" data-bind="text: hasValidDate"></span></div>
+      </div>
+    </script>
+
+
+<div id="container">
+<div class="row">
+<div class="col-3">
+<form>
+<dater>
+      <div class="input-group">
+        <div class="input-group-prepend"><span class="input-group-text">Date</span></div>
+        <input class="form-control" id="month" next="day" data-bind="textInput: month, event:{ focus: (d, e) => onFocus('month', e), blur: () => onBlur('month')}" type="number">
+        <input class="form-control" id="day" next="year" data-bind="textInput: day, event:{ focus: (d, e) => onFocus('day', e), blur: () => onBlur('day')}" type="number">
+        <input class="form-control" id="year" data-bind="textInput: year" type="number">
+        <div class="input-group-append"><span class="input-group-text" data-bind="text: hasValidDate">true</span></div>
+      </div>
+    </dater>
+</form>
+</div>
+</div>
+</div>
+
+
+<script src="https://static.codepen.io/assets/common/stopExecutionOnTimeout-de7e2ef6bfefd24b79a3f68b414b87b8db5b08439cac3f1012092b2290c719cd.js"></script><script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script><script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.0/knockout-min.js"></script>
+<script id="rendered-js">
+          ko.bindingHandlers.bindElement = function (element, valueAccessor, allBindings, viewModel, bindingContext) {
+
+
+};
+ko.components.register('dater', {
+  viewModel: function (params) {
+    const self = this;
+    const goToNext = () => {
+      console.log('fired');
+      $(self.currentFocus()).trigger(jQuery.Event('keydown', { keyCode: 18, which: 18 }));
+      document.getElementById(self.currentFocus().getAttribute('next')).focus();
+    };
+
+
+    const currentDate = new Date();
+    const defaults = {
+      month: currentDate.getMonth() + 1,
+      day: currentDate.getDate().toString(),
+      year: currentDate.getYear() + 1900
+
+      // observables
+    };self.day = ko.observable(defaults.day);
+    self.day.dirty = false;
+    self.day.focused = false;
+    self.month = ko.observable(defaults.month);
+    self.month.dirty = false;
+    self.month.focused = false;
+    self.year = ko.observable(defaults.year);
+    self.currentFocus = ko.observable(null);
+    self.dateTime = ko.computed(() => {
+      var result = null;
+      try {
+        result = new Date(`${self.month()}/${self.day()}/${self.year()}`);
+        console.log(result.toString());
+      } finally {
+        if (result.toString() === "Invalid Date") result = null;
+      }
+      return result;
+    });
+    self.hasValidDate = ko.computed(() => {
+      return self.dateTime() !== null;
+    }).extend({ rateLimit: 100 });
+
+    self.month.subscribe((newVal, oldVal) => {
+      let numVal = 0;
+      let isValid = false;
+      try {
+        numVal = parseInt(newVal);
+        isValid = 0 < numVal && numVal <= 12;
+      } catch {}
+      let isFull = newVal.length === 2;
+      let isGT3 = !(newVal === "1" || newVal === "0");
+      if ((isFull || isGT3) && self.month.dirty && isValid) goToNext();
+      self.month.dirty = true;
+    });
+
+    self.day.subscribe((newVal, oldVal) => {
+      let numVal = 0;
+      let isValid = false;
+      let isFull = newVal.length === 2;
+      let isGT3 = !(newVal === "1" || newVal === "2" || newVal === "3" || newVal === "0");
+      try {
+        numVal = parseInt(newVal);
+        isValid = 0 < numVal && numVal <= 31;
+      } catch {}
+      console.log('isFull', isFull, isGT3, isValid);
+      if ((isFull || isGT3) && self.day.dirty && isValid) goToNext();
+      self.day.dirty = true;
+
+    });
+    // event handlers
+    self.onFocus = (obsName, e) => {
+      self[obsName].dirty = false;
+      self.currentFocus(e.currentTarget);
+      self[obsName]('');
+    };
+    self.onBlur = obsName => {
+      if (self[obsName]() === '') self[obsName](defaults[obsName]);
+    };
+
+  },
+  template: document.getElementById('tmpl-dater').innerHTML });
+
+
+const vm = {
+  strDate: ko.observable(),
+  isValid: ko.observable(false),
+  date: ko.computed(() => {
+    try {
+      vm.isValid(true);
+      return new Date(vm.strDate);
+    } catch {
+      return null;
+    }
+
+  }) };
+
+
+ko.applyBindings(document.getElementById('container'));
+          //# sourceURL=pen.js
+        </script>
+
+
+</body></html>
